@@ -1,8 +1,18 @@
-package urlshort
+package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+
+	"gopkg.in/yaml.v2"
 )
+
+// URLShort ios
+type URLShort struct {
+	Path string `yaml:"path"`
+	URL  string `yaml:"url"`
+}
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -29,9 +39,94 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 // The only errors that can be returned all related to having
 // invalid YAML data.
 //
-// See MapHandler to create a similar http.HandlerFunc via
-// a mapping of paths to urls.
-func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
+
+var yamlData = `
+- path: /wilken
+  url: https://wilkenrivera.com/about
+- path: /youtube
+  url: https://www.youtube.com/watch?v=N9ZWy7xCQ8U&t
+- path: /shreyash
+  url: https://www.linkedin.com/in/shreyash-bukkawar-816bb1116/
+`
+
+//ParseYAML is
+func ParseYAML(yamldata []byte) ([]URLShort, error) {
+
+	var pathURL []URLShort
+
+	err := yaml.Unmarshal(yamldata, &pathURL)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return pathURL, err
+
+}
+
+func buildMap(parsedYaml interface{}) map[string]interface{} {
+
+	var pathURL []map[string]interface{}
+
+	var pathURLs = make(map[string]interface{})
+	pu, _ := json.Marshal(parsedYaml)
+
+	//fmt.Println(string(pu))
+
+	json.Unmarshal(pu, &pathURL)
+
+	for _, value := range pathURL {
+
+		pathURLs[value["Path"].(string)] = value["URL"].(string)
+	}
+
+	return pathURLs
+
+}
+
+//YAMLHandler is
+func YAMLHandler(w http.ResponseWriter, req *http.Request) {
 	// TODO: Implement this...
-	return nil, nil
+
+	parsedYaml, err := ParseYAML([]byte(yamlData))
+
+	if err != nil {
+
+		fmt.Fprintf(w, "Unable to parse yaml")
+	}
+
+	//fmt.Println(parsedYaml)
+	parsedMap := buildMap(parsedYaml)
+
+	if req.URL.Path == "/" {
+		fmt.Println("Empty Path in URL")
+		fmt.Fprintf(w, "Empty Path in URL")
+		return
+
+	}
+
+	redirectURL, isURLExists := parsedMap[req.URL.Path].(string)
+
+	if isURLExists == false {
+
+		fmt.Fprintf(w, "Short URL doesnt exist in yaml file")
+
+		return
+	}
+	fmt.Println(parsedMap[req.URL.Path].(string))
+
+	http.Redirect(w, req, redirectURL, http.StatusSeeOther)
+
+	fmt.Println(req.URL.Path)
+
+	fmt.Fprintf(w, req.URL.Path)
+
+	return
+}
+
+func main() {
+
+	http.HandleFunc("/", YAMLHandler)
+	http.ListenAndServe(":8080", nil)
+
 }
