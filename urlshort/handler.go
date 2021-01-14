@@ -101,7 +101,7 @@ func RequiredURL(req *http.Request) (string, error) {
 	if req.URL.Path == "/" {
 		fmt.Println("Empty Path in URL")
 		//fmt.Fprintf(w, "Empty Path in URL")
-		return "", err
+		return "", errors.New("Empty Path in URL")
 
 	}
 
