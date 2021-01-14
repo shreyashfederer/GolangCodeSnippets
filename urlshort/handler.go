@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -59,7 +60,7 @@ func ParseYAML(yamldata []byte) ([]URLShort, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	//fmt.Println(pathURL)
 	return pathURL, err
 
 }
@@ -84,15 +85,14 @@ func buildMap(parsedYaml interface{}) map[string]interface{} {
 
 }
 
-//YAMLHandler is
-func YAMLHandler(w http.ResponseWriter, req *http.Request) {
-	// TODO: Implement this...
+//RequiredURL is
+func RequiredURL(req *http.Request) (string, error) {
 
 	parsedYaml, err := ParseYAML([]byte(yamlData))
 
 	if err != nil {
 
-		fmt.Fprintf(w, "Unable to parse yaml")
+		return "", err
 	}
 
 	//fmt.Println(parsedYaml)
@@ -100,26 +100,56 @@ func YAMLHandler(w http.ResponseWriter, req *http.Request) {
 
 	if req.URL.Path == "/" {
 		fmt.Println("Empty Path in URL")
-		fmt.Fprintf(w, "Empty Path in URL")
-		return
+		//fmt.Fprintf(w, "Empty Path in URL")
+		return "", err
 
 	}
 
 	redirectURL, isURLExists := parsedMap[req.URL.Path].(string)
 
+	// fmt.Println("redirectURL is : ", redirectURL)
+
 	if isURLExists == false {
 
-		fmt.Fprintf(w, "Short URL doesnt exist in yaml file")
+		//fmt.Fprintf(w, "Short URL doesnt exist in yaml file")
 
+		return "", errors.New("Short URL doesnt exist in yaml file")
+	}
+	//fmt.Println(parsedMap[req.URL.Path].(string))
+	return redirectURL, err
+}
+
+//YAMLHandler is
+func YAMLHandler(w http.ResponseWriter, req *http.Request) {
+	// TODO: Implement this...
+	redirectURL, err := RequiredURL(req)
+
+	if err != nil {
+
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	fmt.Println(parsedMap[req.URL.Path].(string))
 
-	http.Redirect(w, req, redirectURL, http.StatusSeeOther)
+	fmt.Println("redirectURL is", redirectURL)
+	http.Redirect(w, req, redirectURL, http.StatusFound)
+	// redirectURL, isURLExists := parsedMap[req.URL.Path].(string)
 
-	fmt.Println(req.URL.Path)
+	// if isURLExists == false {
 
-	fmt.Fprintf(w, req.URL.Path)
+	// 	fmt.Fprintf(w, "Short URL doesnt exist in yaml file")
+
+	// 	return
+	// }
+	// fmt.Println(parsedMap[req.URL.Path].(string))
+	//w.WriteHeader(http.StatusOK)
+
+	//http.Redirect(w, req, "www.google.com", http.StatusFound)
+
+	// fmt.Println(req.URL.Path)
+
+	// fmt.Println()
+
+	// fmt.Fprintf(w, req.URL.Path)
 
 	return
 }
