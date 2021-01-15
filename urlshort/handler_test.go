@@ -153,7 +153,7 @@ func TestYAMLHandler(t *testing.T) {
 
 			expected: expectedResponse{
 
-				Status: 404,
+				Status: 200,
 				URL:    "",
 			},
 

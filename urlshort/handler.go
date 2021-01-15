@@ -79,7 +79,7 @@ func buildMap(parsedYaml []URLShort) map[string]interface{} {
 }
 
 //RequiredURL is
-func RequiredURL(req *http.Request) (string, error) {
+func RequiredURL(req *http.Request, w http.ResponseWriter) (string, error) {
 
 	parsedYaml, err := ParseYAML([]byte(yamlData))
 
@@ -93,7 +93,11 @@ func RequiredURL(req *http.Request) (string, error) {
 
 	if req.URL.Path == "/" {
 		fmt.Println("Empty Path in URL")
-		//fmt.Fprintf(w, "Empty Path in URL")
+		// fmt.Fprintf(w, "Empty Path in URL")
+		// handler := http.HandlerFunc(fallback)
+		// handler.ServeHTTP(w, req)
+
+		fallback(w, req)
 		return "", errors.New("Empty Path in URL")
 
 	}
@@ -105,17 +109,23 @@ func RequiredURL(req *http.Request) (string, error) {
 	if isURLExists == false {
 
 		//fmt.Fprintf(w, "Short URL doesnt exist in yaml file")
-
+		fallback(w, req)
 		return "", errors.New("Short URL doesnt exist in yaml file")
 	}
 	//fmt.Println(parsedMap[req.URL.Path].(string))
 	return redirectURL, err
 }
 
+func fallback(w http.ResponseWriter, req *http.Request) {
+
+	fmt.Fprintf(w, "The path is not present in YAMl file. Please try another path")
+
+}
+
 //YAMLHandler is
 func YAMLHandler(w http.ResponseWriter, req *http.Request) {
 	// TODO: Implement this...
-	redirectURL, err := RequiredURL(req)
+	redirectURL, err := RequiredURL(req, w)
 
 	if err != nil {
 
