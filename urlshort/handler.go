@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -65,20 +64,14 @@ func ParseYAML(yamldata []byte) ([]URLShort, error) {
 
 }
 
-func buildMap(parsedYaml interface{}) map[string]interface{} {
-
-	var pathURL []map[string]interface{}
+func buildMap(parsedYaml []URLShort) map[string]interface{} {
 
 	var pathURLs = make(map[string]interface{})
-	pu, _ := json.Marshal(parsedYaml)
 
-	//fmt.Println(string(pu))
+	for _, value := range parsedYaml {
 
-	json.Unmarshal(pu, &pathURL)
+		pathURLs[value.Path] = value.URL
 
-	for _, value := range pathURL {
-
-		pathURLs[value["Path"].(string)] = value["URL"].(string)
 	}
 
 	return pathURLs
